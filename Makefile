@@ -33,10 +33,11 @@ build:
 #:help: smoke-tests        | Runs the `test` target, building and testing the driver.
 #changed to properly create and mount volumes
 .PHONY: smoke-tests
-smoke-tests: build
+smoke-tests: build up
 	docker volume create cores
 	docker volume create valgrind
 	docker run -t --cap-add=SYS_PTRACE --memory 1g --volume cores:/cores --volume valgrind:/valgrind --name test --rm --network nuodb-net nuodb/node-nuodb:$(VERSION)-build npm run test-smoke
+	$(MAKE) dn
 
 #:help: nightly-tests        | Runs the `test-nightly` target which takes longer to run.
 .PHONY: nightly-tests

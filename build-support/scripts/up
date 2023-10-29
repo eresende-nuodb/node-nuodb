@@ -2,38 +2,50 @@
 
 : ${IMG_NAME:="nuodb/nuodb-ce:latest"}
 
-docker network create nuodb-net
+echo -n "Starting NuoDB Database"
+{
+    docker network create nuodb-net
 
-docker run -d --name ad1 --rm \
-    --hostname ad1 \
-    --net nuodb-net \
-    -p 8888:8888 \
-    -p 48004:48004 \
-    -p 48005:48005 \
-    -e "NUODB_DOMAIN_ENTRYPOINT=ad1" \
-    ${IMG_NAME} nuoadmin
-#changed to properly create and mount volumes
-docker volume create vol1
+    docker run -d --name ad1 --rm \
+        --hostname ad1 \
+        --net nuodb-net \
+        -p 8888:8888 \
+        -p 48004:48004 \
+        -p 48005:48005 \
+        -e "NUODB_DOMAIN_ENTRYPOINT=ad1" \
+        "${IMG_NAME}" nuoadmin
+    #changed to properly create and mount volumes
+    docker volume create vol1
 
-docker volume create vol2
+    docker volume create vol2
 
 
-docker run -d --name sm1 --hostname sm1 --rm \
-    --volume vol1:/var/opt/nuodb/backup \
-    --volume vol2:/var/opt/nuodb/archive \
-    --net nuodb-net ${IMG_NAME} nuodocker \
-    --api-server ad1:8888 start sm \
-    --db-name test --server-id ad1 \
-    --dba-user dba --dba-password dba \
-    --labels "zone east node localhost" \
-    --archive-dir /var/opt/nuodb/archive
+    docker run -d --name sm1 --hostname sm1 --rm \
+        --volume vol1:/var/opt/nuodb/backup \
+        --volume vol2:/var/opt/nuodb/archive \
+        --net nuodb-net "${IMG_NAME}" nuodocker \
+        --api-server ad1:8888 start sm \
+        --db-name test --server-id ad1 \
+        --dba-user dba --dba-password dba \
+        --labels "zone east node localhost" \
+        --archive-dir /var/opt/nuodb/archive
 
-docker run -d --name te1 --hostname te1 --rm \
-    --net nuodb-net ${IMG_NAME} nuodocker \
-    --api-server ad1:8888 start te \
-    --db-name test --server-id ad1
+    docker run -d --name te1 --hostname te1 --rm \
+        --net nuodb-net "${IMG_NAME}" nuodocker \
+        --api-server ad1:8888 start te \
+        --db-name test --server-id ad1
 
-docker run -d --name te2 --hostname te2 --rm \
-    --net nuodb-net ${IMG_NAME} nuodocker \
-    --api-server ad1:8888 start te \
-    --db-name test --server-id ad1
+    docker run -d --name te2 --hostname te2 --rm \
+        --net nuodb-net "${IMG_NAME}" nuodocker \
+        --api-server ad1:8888 start te \
+        --db-name test --server-id ad1
+status=0
+} > /dev/null
+
+while [ "$status" -lt 3 ]
+do
+    status=$(build-support/scripts/status | grep -c MONITORED:RUNNING)
+    echo -n "."
+done
+echo " NuoDB Database Ready!"
+

@@ -1,8 +1,14 @@
 #!/usr/bin/env bash
 
-docker stop te1 te2 sm1 ad1
-docker network rm nuodb-net
-##rm -fr vol1 vol2
+echo -n "Shutting down NuoDB Database.."
+{
+    docker stop te1 te2 sm1 ad1
+    docker network rm nuodb-net
+    ##rm -fr vol1 vol2
 
-#added to properly remove newly created volumes
-docker volume rm vol1 vol2 cores valgrind
+    #added to properly remove newly created volumes
+    docker volume rm vol1 vol2 cores valgrind
+} > /dev/null
+
+echo "Done!"
+
